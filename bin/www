@@ -1,0 +1,65 @@
+#!/usr/bin/env node
+
+import { Command } from "commander";
+import dotenv from "dotenv";
+import chalk from "chalk";
+import { shortenURL, listShortenedURLs } from "../db_utils/index.js";
+
+dotenv.config();
+
+const program = new Command();
+
+// Command to shorten a URL
+program
+  .command("shorten <url>")
+  .description("Shorten a given URL")
+  .action(async (url) => {
+    try {
+      const shortenedURL = await shortenURL(url);
+      if (shortenedURL) {
+        await saveShortenedURL(url, shortenedURL);
+      }
+      displayShortenedURL(shortenedURL, url);
+    } catch (error) {
+      handleShortenURLError(url, error);
+    }
+  });
+
+// Command to list all shortened URLs
+program
+  .command("list")
+  .description("List all shortened URLs")
+  .action(async () => {
+    try {
+      const shortenedURLs = await listShortenedURLs();
+      displayShortenedURLList(shortenedURLs);
+    } catch (error) {
+      handleListShortenedURLsError(error);
+    }
+  });
+
+program.parse(process.argv);
+
+// Function to display the shortened URL
+function displayShortenedURL(shortenedURL, originalURL) {
+  console.log(`Shortened URL: ${chalk.yellowBright(shortenedURL)}`);
+  console.log(chalk.bgGray(`Long URL: ${originalURL}`));
+}
+
+// Function to handle error while shortening URL
+function handleShortenURLError(url, error) {
+  console.error(chalk.red(`ERROR: ${url} is not a valid URL`), error.message);
+}
+
+// Function to display the list of shortened URLs
+function displayShortenedURLList(shortenedURLs) {
+  console.log(chalk.bgGray("Shortened URLs:"));
+  shortenedURLs.forEach((url, index) => {
+    console.log(chalk.yellow(`${index + 1}. ${url}`));
+  });
+}
+
+// Function to handle error while listing shortened URLs
+function handleListShortenedURLsError(error) {
+  console.error(chalk.red("ERROR: Unable to list shortened URLs"), error.message);
+}
